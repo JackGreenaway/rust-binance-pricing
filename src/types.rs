@@ -1,11 +1,12 @@
 use serde::Deserialize;
 
+#[derive(Deserialize)]
 pub struct DepthUpdate {
     pub stream: String,
     pub data: DepthUpdateData,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Deserialize)]
 pub struct DepthUpdateData {
     pub e: String,
     #[serde(rename = "E")]
