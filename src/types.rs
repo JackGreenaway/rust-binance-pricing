@@ -1,5 +1,35 @@
 use serde::Deserialize;
 
+fn string_to_f64<'de, D>(deserializer: D) -> Result<f64, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    let s: String = Deserialize::deserialize(deserializer)?;
+    s.parse::<f64>().map_err(serde::de::Error::custom)
+}
+
+fn vec_of_string_pairs_to_f64<'de, D>(deserializer: D) -> Result<Vec<[f64; 2]>, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    let v: Vec<[String; 2]> = Deserialize::deserialize(deserializer)?;
+    v.into_iter()
+        .map(|[s1, s2]| {
+            let f1 = s1.parse::<f64>().map_err(serde::de::Error::custom)?;
+            let f2 = s2.parse::<f64>().map_err(serde::de::Error::custom)?;
+            Ok([f1, f2])
+        })
+        .collect()
+}
+
+// fn string_to_i64<'de, D>(deserializer: D) -> Result<i64, D::Error>
+// where
+//     D: serde::Deserializer<'de>,
+// {
+//     let s: String = Deserialize::deserialize(deserializer)?;
+//     s.parse::<i64>().map_err(serde::de::Error::custom)
+// }
+
 #[derive(Deserialize)]
 #[allow(dead_code)]
 pub struct DepthUpdate {
@@ -22,8 +52,10 @@ pub struct DepthUpdateData {
     pub u2: i64,
     #[serde(rename = "pu")]
     pub p: i64,
-    pub b: Vec<[String; 2]>,
-    pub a: Vec<[String; 2]>,
+    #[serde(deserialize_with = "vec_of_string_pairs_to_f64")]
+    pub b: Vec<[f64; 2]>,
+    #[serde(deserialize_with = "vec_of_string_pairs_to_f64")]
+    pub a: Vec<[f64; 2]>,
 }
 
 #[derive(Deserialize)]
@@ -43,12 +75,16 @@ pub struct BookTickerData {
     #[serde(rename = "T")]
     pub t: i64,
     pub s: String,
-    pub b: String,
+    #[serde(deserialize_with = "string_to_f64")]
+    pub b: f64,
     #[serde(rename = "B")]
-    pub bq: String,
-    pub a: String,
+    #[serde(deserialize_with = "string_to_f64")]
+    pub bq: f64,
+    #[serde(deserialize_with = "string_to_f64")]
+    pub a: f64,
     #[serde(rename = "A")]
-    pub aq: String,
+    #[serde(deserialize_with = "string_to_f64")]
+    pub aq: f64,
 }
 
 #[derive(Deserialize)]
@@ -64,11 +100,15 @@ pub struct MarkPriceUpdateData {
     #[serde(rename = "E")]
     pub e2: i64,
     pub s: String,
-    pub p: String,
+    #[serde(deserialize_with = "string_to_f64")]
+    pub p: f64,
     #[serde(rename = "P")]
-    pub p2: String,
-    pub i: String,
-    pub r: String,
+    #[serde(deserialize_with = "string_to_f64")]
+    pub p2: f64,
+    #[serde(deserialize_with = "string_to_f64")]
+    pub i: f64,
+    #[serde(deserialize_with = "string_to_f64")]
+    pub r: f64,
     #[serde(rename = "T")]
     pub t: i64,
 }
@@ -86,8 +126,10 @@ pub struct AggTradeData {
     pub e2: i64,
     pub a: i64,
     pub s: String,
-    pub p: String,
-    pub q: String,
+    #[serde(deserialize_with = "string_to_f64")]
+    pub p: f64,
+    #[serde(deserialize_with = "string_to_f64")]
+    pub q: f64,
     pub f: i64,
     pub l: i64,
     #[serde(rename = "T")]

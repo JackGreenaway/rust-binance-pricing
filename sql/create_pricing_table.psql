@@ -1,9 +1,0 @@
-SET TIME ZONE 'UTC';
-
-CREATE TABLE IF NOT EXISTS market_trade (
-    ts timestamptz NOT NULL,
-    symbol VARCHAR,
-    price VARCHAR,
-    quantity VARCHAR,
-    maker BOOLEAN
-);
