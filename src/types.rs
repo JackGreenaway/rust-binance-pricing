@@ -1,12 +1,14 @@
 use serde::Deserialize;
 
 #[derive(Deserialize)]
+#[allow(dead_code)]
 pub struct DepthUpdate {
     pub stream: String,
     pub data: DepthUpdateData,
 }
 
 #[derive(Deserialize)]
+#[allow(dead_code)]
 pub struct DepthUpdateData {
     pub e: String,
     #[serde(rename = "E")]
@@ -25,12 +27,14 @@ pub struct DepthUpdateData {
 }
 
 #[derive(Deserialize)]
+#[allow(dead_code)]
 pub struct BookTickerUpdate {
     pub stream: String,
     pub data: BookTickerData,
 }
 
 #[derive(Deserialize)]
+#[allow(dead_code)]
 pub struct BookTickerData {
     pub e: String,
     pub u: i64,
@@ -48,11 +52,13 @@ pub struct BookTickerData {
 }
 
 #[derive(Deserialize)]
+#[allow(dead_code)]
 pub struct MarkPriceUpdate {
     pub stream: String,
     pub data: MarkPriceUpdateData,
 }
 #[derive(Deserialize)]
+#[allow(dead_code)]
 pub struct MarkPriceUpdateData {
     pub e: String,
     #[serde(rename = "E")]
@@ -67,11 +73,13 @@ pub struct MarkPriceUpdateData {
     pub t: i64,
 }
 #[derive(Deserialize)]
+#[allow(dead_code)]
 pub struct AggTrade {
     pub stream: String,
     pub data: AggTradeData,
 }
 #[derive(Deserialize)]
+#[allow(dead_code)]
 pub struct AggTradeData {
     pub e: String,
     #[serde(rename = "E")]
