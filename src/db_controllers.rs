@@ -11,7 +11,8 @@ pub struct Database {
 }
 
 pub async fn del_database(db_name: &str) -> Result<(), sqlx::Error> {
-    let pool = PgPool::connect("postgres://postgres:admin@localhost:5432/postgres").await?;
+    let pool: sqlx::Pool<sqlx::Postgres> =
+        PgPool::connect("postgres://postgres:admin@localhost:5432/postgres").await?;
     sqlx::query(&format!("DROP DATABASE IF EXISTS {}", db_name))
         .execute(&pool)
         .await?;
@@ -25,7 +26,7 @@ impl Database {
     }
 
     async fn execute_sql_file(pool: &PgPool, path: &str) -> Result<(), sqlx::Error> {
-        let sql = Self::read_sql_file(path);
+        let sql: String = Self::read_sql_file(path);
 
         for stmt in sql.split(';') {
             let stmt = stmt.trim();
@@ -56,8 +57,8 @@ impl Database {
             // println!("Database '{}' already exists.", db_name);
         }
 
-        let db_conninfo = format!("postgres://postgres:admin@localhost:5432/{}", db_name);
-        let db_pool = PgPool::connect(&db_conninfo).await?;
+        let db_conninfo: String = format!("postgres://postgres:admin@localhost:5432/{}", db_name);
+        let db_pool: sqlx::Pool<sqlx::Postgres> = PgPool::connect(&db_conninfo).await?;
 
         println!("Connected to '{}'", db_name);
 
@@ -74,7 +75,7 @@ impl Database {
 
     pub async fn insert_trade(&self, data: &AggTradeData) -> Result<(), sqlx::Error> {
         let num_trades: i64 = data.l - data.f + 1;
-        let utc_dt = i64_to_ts(data.t, "utc").with_timezone(&Utc);
+        let utc_dt: chrono::DateTime<Utc> = i64_to_ts(data.t, "utc").with_timezone(&Utc);
 
         sqlx::query("INSERT INTO market_trade (ts, symbol, price, quantity, num_trades, maker) VALUES ($1, $2, $3, $4, $5, $6)")
             .bind(utc_dt)
@@ -90,8 +91,8 @@ impl Database {
     }
 
     pub async fn insert_book_update(&self, data: &DepthUpdateData) -> Result<(), sqlx::Error> {
-        let event_time = i64_to_ts(data.e2, "utc").with_timezone(&Utc);
-        let transaction_time = i64_to_ts(data.t, "utc").with_timezone(&Utc);
+        let event_time: chrono::DateTime<Utc> = i64_to_ts(data.e2, "utc").with_timezone(&Utc);
+        let transaction_time: chrono::DateTime<Utc> = i64_to_ts(data.t, "utc").with_timezone(&Utc);
 
         let update_id: i64 = sqlx::query_scalar(
             "
