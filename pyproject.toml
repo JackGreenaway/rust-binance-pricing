@@ -10,4 +10,5 @@ dependencies = [
     "polars>=1.33.0",
     "psycopg2-binary>=2.9.10",
     "ruff>=0.12.12",
+    "seaborn>=0.13.2",
 ]

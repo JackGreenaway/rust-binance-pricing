@@ -43,7 +43,7 @@ fn main() {
         println!("Market data client is starting....");
 
         let url_str: String = format!(
-            "wss://fstream.binance.com/stream?streams={}@aggTrade/{}@depth10@100ms",
+            "wss://fstream.binance.com/stream?streams={}@aggTrade/{}@depth20@100ms",
             // "wss://fstream.binance.com/stream?streams={}@bookTicker/{}@aggTrade/{}@depth5@100ms",
             cli.sym, 
             cli.sym
