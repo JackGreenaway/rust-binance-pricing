@@ -1,3 +1,4 @@
+use clap::Parser;
 use serde::Deserialize;
 
 fn string_to_f64<'de, D>(deserializer: D) -> Result<f64, D::Error>
@@ -20,6 +21,19 @@ where
             Ok([f1, f2])
         })
         .collect()
+}
+
+#[derive(Parser, Debug)]
+#[command(author, version, about)]
+pub struct Cli {
+    #[arg(short, long, default_value = "btcusdt")]
+    pub sym: String,
+
+    #[arg(short, long, default_value = "utc", value_parser = ["utc", "local"])]
+    pub tz: String,
+
+    #[arg(long, action = clap::ArgAction::SetTrue)]
+    pub del_db: bool,
 }
 
 // fn string_to_i64<'de, D>(deserializer: D) -> Result<i64, D::Error>

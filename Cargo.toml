@@ -13,3 +13,5 @@ url = "2.5.7"
 chrono = "0.4.41"
 clap = { version = "4", features = ["derive"] }
 sqlx = { version = "0.8.6", features = ["postgres", "runtime-tokio-native-tls", "macros", "chrono"] }
+anyhow = "1.0.99"
+polars = { version = "0.50.0", features = ["lazy", "temporal", "dtype-categorical", "cum_agg"] }
