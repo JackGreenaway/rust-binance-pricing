@@ -3,7 +3,6 @@ use crate::manip::Orderbook;
 use crate::types::{AggTrade, BookTickerUpdate, Cli, DepthUpdate, MarkPriceUpdate};
 
 use chrono::{DateTime, FixedOffset, Local, Offset, Utc};
-
 use serde_json::Value;
 
 pub fn i64_to_ts(ts_ms: i64, tz: &str) -> DateTime<FixedOffset> {

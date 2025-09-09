@@ -41,7 +41,6 @@ impl Orderbook {
         Ok(Self { df })
     }
 
-    /// Compute cumulative depth and bps_from_mid
     pub fn calculate_depth(&mut self) -> PolarsResult<DataFrame> {
         let lf: LazyFrame = self.df.clone().lazy().with_columns([col("quantity")
             .cum_sum(false)
