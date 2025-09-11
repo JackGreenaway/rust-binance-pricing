@@ -5,7 +5,7 @@ mod utils;
 
 use crate::db_controllers::{Database, del_database};
 use crate::types::Cli;
-use crate::utils::message_handler;
+use crate::utils::{clear_cli, message_handler};
 
 use clap::Parser;
 use futures::StreamExt;
@@ -42,6 +42,8 @@ async fn main() {
     let (_write, mut read) = ws_stream.split();
 
     println!("Connected to Binance WebSocket.");
+
+    clear_cli();
 
     while let Some(msg) = read.next().await {
         match msg {

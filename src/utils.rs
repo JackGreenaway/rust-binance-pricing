@@ -3,7 +3,30 @@ use crate::manip::Orderbook;
 use crate::types::{AggTrade, BookTickerUpdate, Cli, DepthUpdate, MarkPriceUpdate};
 
 use chrono::{DateTime, FixedOffset, Local, Offset, Utc};
+use crossterm::{
+    execute,
+    terminal::{Clear, ClearType},
+};
+use polars::lazy::prelude::*;
+use ratatui::{
+    Terminal,
+    backend::CrosstermBackend,
+    layout::{Constraint, Direction, Layout},
+    style::{Color, Style},
+    widgets::{
+        // Bar,
+        BarChart,
+        Block,
+        Borders,
+    },
+};
 use serde_json::Value;
+use std::io;
+
+pub fn clear_cli() {
+    let mut stdout = io::stdout();
+    execute!(stdout, Clear(ClearType::All)).unwrap();
+}
 
 pub fn i64_to_ts(ts_ms: i64, tz: &str) -> DateTime<FixedOffset> {
     let secs: i64 = ts_ms / 1000;
@@ -45,10 +68,14 @@ pub async fn message_handler(db: &Database, cli: &Cli, raw: &str) -> anyhow::Res
             let mut ob = Orderbook::from_depth_update(&depth_update.data)?;
             let depth = ob.calculate_depth()?;
 
-            let dt = i64_to_ts(depth_update.data.e2, &cli.tz).format("%Y-%m-%d %H:%M:%S%.3f");
+            if let Err(e) = render_depth_chart(&depth) {
+                eprintln!("Failed to render chart {}", e)
+            }
 
-            println!("{}", dt);
-            println!("{:#?}", &depth);
+            // let dt = i64_to_ts(depth_update.data.e2, &cli.tz).format("%Y-%m-%d %H:%M:%S%.3f");
+
+            // println!("{}", dt);
+            // println!("{:#?}", &depth);
         }
         "bookTicker" => {
             let book_update: BookTickerUpdate = serde_json::from_str(raw)?;
@@ -76,5 +103,88 @@ pub async fn message_handler(db: &Database, cli: &Cli, raw: &str) -> anyhow::Res
         }
         _ => {}
     }
+    Ok(())
+}
+
+fn render_depth_chart(depth: &polars::prelude::DataFrame) -> anyhow::Result<()> {
+    fn extract_side_data(
+        depth: &polars::prelude::DataFrame,
+        side_val: i32,
+    ) -> anyhow::Result<Vec<(String, u64)>> {
+        let side_data = depth
+            .clone()
+            .lazy()
+            .filter(col("side").eq(lit(side_val)))
+            .collect()?;
+
+        let prices: Vec<String> = side_data
+            .column("price")?
+            .f64()?
+            .into_no_null_iter()
+            .map(|p| format!("{:.2}", p))
+            .collect();
+
+        let cum_depth: Vec<u64> = side_data
+            .column("cumulative_depth")?
+            .f64()?
+            .into_no_null_iter()
+            .map(|d| d as u64)
+            .collect();
+
+        Ok(prices
+            .into_iter()
+            .zip(cum_depth.into_iter())
+            .collect::<Vec<(String, u64)>>())
+    }
+
+    let max_depth = depth
+        .column("cumulative_depth")?
+        .f64()?
+        .into_no_null_iter()
+        .fold(0.0_f64, |a, b| a.max(b));
+    let n_depth_levels = (max_depth.ceil() as u64) + 3;
+
+    let mut stdout = io::stdout();
+    let backend = CrosstermBackend::new(&mut stdout);
+    let mut terminal = Terminal::new(backend)?;
+
+    let bid_vec = extract_side_data(depth, 1)?;
+    let bid_vec: Vec<(&str, u64)> = bid_vec.iter().map(|(s, d)| (s.as_str(), *d)).collect();
+
+    let ask_vec = extract_side_data(depth, -1)?;
+    let ask_vec: Vec<(&str, u64)> = ask_vec.iter().map(|(s, d)| (s.as_str(), *d)).collect();
+
+    // let best_bid = bid_vec.last().map(|(_, d)| *d as f64).unwrap_or(0.0);
+    // let best_ask = ask_vec.first().map(|(_, d)| *d as f64).unwrap_or(0.0);
+    // let mid_price = (best_bid + best_ask) / 2.0;
+
+    fn plot_bar<'a>(
+        title: &'a str,
+        data: &'a [(&str, u64)],
+        color: Color,
+        n_depth_levels: u64,
+    ) -> BarChart<'a> {
+        BarChart::default()
+            .block(Block::default().title(title).borders(Borders::ALL))
+            .data(data)
+            .bar_style(Style::default().fg(color))
+            .bar_gap(0)
+            .max(n_depth_levels)
+    }
+
+    terminal.draw(|f| {
+        let chunks = Layout::default()
+            .direction(Direction::Horizontal)
+            .constraints([Constraint::Percentage(50), Constraint::Percentage(50)].as_ref())
+            .split(f.area());
+
+        let bids = plot_bar("Bids", &bid_vec, Color::Green, n_depth_levels);
+
+        let asks = plot_bar("Asks", &ask_vec, Color::Red, n_depth_levels);
+
+        f.render_widget(bids, chunks[0]);
+        f.render_widget(asks, chunks[1]);
+    })?;
+
     Ok(())
 }
