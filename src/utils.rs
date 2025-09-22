@@ -17,7 +17,7 @@ use ratatui::{
         // Bar,
         BarChart,
         Block,
-        Borders,
+        // Borders,
     },
 };
 use serde_json::Value;
@@ -165,7 +165,7 @@ fn render_depth_chart(depth: &polars::prelude::DataFrame) -> anyhow::Result<()> 
         n_depth_levels: u64,
     ) -> BarChart<'a> {
         BarChart::default()
-            .block(Block::default().title(title).borders(Borders::ALL))
+            .block(Block::default().title(title))
             .data(data)
             .bar_style(Style::default().fg(color))
             .bar_gap(0)
