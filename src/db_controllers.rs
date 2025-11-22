@@ -2,10 +2,12 @@ use crate::utils::i64_to_ts;
 use chrono::Utc;
 use sqlx::{Executor, PgPool};
 use std::fs;
+use tracing::{info, trace};
 
 use crate::types::{AggTradeData, DepthUpdateData};
 
 #[allow(dead_code)]
+#[derive(Clone)]
 pub struct Database {
     pub pool: PgPool,
 }
@@ -16,7 +18,7 @@ pub async fn del_database(db_name: &str) -> Result<(), sqlx::Error> {
     sqlx::query(&format!("DROP DATABASE IF EXISTS {}", db_name))
         .execute(&pool)
         .await?;
-    println!("Database '{}' deleted.", db_name);
+    info!("Database '{}' deleted.", db_name);
     Ok(())
 }
 
@@ -49,18 +51,18 @@ impl Database {
                 .await?;
 
         if db_exists.0 == 0 {
-            println!("Database '{}' does not exist. Creating...", db_name);
+            info!("Database '{}' does not exist. Creating...", db_name);
             sqlx::query(&format!("CREATE DATABASE {}", db_name))
                 .execute(&pool)
                 .await?;
         } else {
-            // println!("Database '{}' already exists.", db_name);
+            // info!("Database '{}' already exists.", db_name);
         }
 
         let db_conninfo: String = format!("postgres://postgres:admin@localhost:5432/{}", db_name);
         let db_pool: sqlx::Pool<sqlx::Postgres> = PgPool::connect(&db_conninfo).await?;
 
-        println!("Connected to '{}'", db_name);
+        info!("Connected to '{}'", db_name);
 
         Ok(Database { pool: db_pool })
     }
@@ -68,7 +70,7 @@ impl Database {
     pub async fn create_tables(&self, sql_path: &str) -> Result<(), sqlx::Error> {
         Self::execute_sql_file(&self.pool, sql_path).await?;
 
-        println!("Tables created successfully.");
+        info!("Tables created successfully.");
 
         Ok(())
     }
@@ -97,7 +99,7 @@ impl Database {
         let update_id: i64 = sqlx::query_scalar(
             "
             INSERT INTO
-                depth_updates (
+                orderbook_updates (
                     event_time,
                     transaction_time,
                     symbol,
@@ -108,7 +110,7 @@ impl Database {
             VALUES
                 ($1, $2, $3, $4, $5, $6)
             RETURNING
-                depth_update_id",
+                ob_update_id",
         )
         .bind(event_time)
         .bind(transaction_time)
@@ -119,29 +121,50 @@ impl Database {
         .fetch_one(&self.pool)
         .await?;
 
-        for (i, bid) in data.b.iter().enumerate() {
-            sqlx::query(
-                "INSERT INTO bid_depth (depth_update_id, level_id, price, quantity) VALUES ($1, $2, $3, $4)",
-            )
-            .bind(update_id)
-            .bind((i + 1) as i32)
-            .bind(bid[0])
-            .bind(bid[1])
-            .execute(&self.pool)
-            .await?;
-        }
+        trace!(
+            "Inserted ob update for event time {} @ {} for symbol: {}",
+            event_time,
+            Utc::now(),
+            data.s
+        );
 
-        for (i, ask) in data.a.iter().enumerate() {
-            sqlx::query(
-                "INSERT INTO ask_depth (depth_update_id, level_id, price, quantity) VALUES ($1, $2, $3, $4)",
-            )
-            .bind(update_id)
-            .bind((i + 1) as i32)
-            .bind(ask[0])
-            .bind(ask[1])
-            .execute(&self.pool)
-            .await?;
-        }
+        let bid_values: Vec<String> = data
+            .b
+            .iter()
+            .enumerate()
+            .map(|(i, bid)| format!("({}, {}, {}, {}, {})", update_id, 1, i + 1, bid[0], bid[1]))
+            .collect();
+        let bid_sql = format!(
+            "INSERT INTO orderbook_levels (ob_update_id, side, level_id, price, quantity) VALUES {}",
+            bid_values.join(", ")
+        );
+        sqlx::query(&bid_sql).execute(&self.pool).await?;
+
+        trace!(
+            "Completed bid orderbook level insert for ui# {} @ {} for symbol: {}",
+            update_id,
+            Utc::now(),
+            data.s
+        );
+
+        let ask_values: Vec<String> = data
+            .a
+            .iter()
+            .enumerate()
+            .map(|(i, ask)| format!("({}, {}, {}, {}, {})", update_id, -1, i + 1, ask[0], ask[1]))
+            .collect();
+        let ask_sql = format!(
+            "INSERT INTO orderbook_levels (ob_update_id, side, level_id, price, quantity) VALUES {}",
+            ask_values.join(", ")
+        );
+        sqlx::query(&ask_sql).execute(&self.pool).await?;
+
+        trace!(
+            "Completed ask orderbook level insert for ui# {} @ {} for symbol: {}",
+            update_id,
+            Utc::now(),
+            data.s
+        );
 
         Ok(())
     }

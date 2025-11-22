@@ -26,14 +26,17 @@ where
 #[derive(Parser, Debug)]
 #[command(author, version, about)]
 pub struct Cli {
-    #[arg(short, long, default_value = "btcusdt")]
-    pub sym: String,
+    #[arg(short, long, default_value = "btcusdt", num_args=1..)]
+    pub sym: Vec<String>,
 
     #[arg(short, long, default_value = "utc", value_parser = ["utc", "local"])]
     pub tz: String,
 
     #[arg(long, action = clap::ArgAction::SetTrue)]
     pub del_db: bool,
+
+    #[arg(short, long, action = clap::ArgAction::Count)]
+    pub verbose: u8,
 }
 
 // fn string_to_i64<'de, D>(deserializer: D) -> Result<i64, D::Error>

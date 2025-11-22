@@ -20,8 +20,8 @@ CREATE INDEX IF NOT EXISTS idx_market_trade_ts ON market_trade (ts DESC);
 
 
 CREATE TABLE IF NOT EXISTS
-    depth_updates (
-        depth_update_id bigserial PRIMARY KEY,
+    orderbook_updates (
+        ob_update_id bigserial PRIMARY KEY,
         event_time timestamptz,
         transaction_time timestamptz,
         symbol VARCHAR,
@@ -32,13 +32,14 @@ CREATE TABLE IF NOT EXISTS
 
 
 
-CREATE INDEX IF NOT EXISTS idx_depth_update_ts ON depth_updates (transaction_time DESC);
+CREATE INDEX IF NOT EXISTS idx_depth_update_ts ON orderbook_updates (transaction_time DESC);
 
 
 
 CREATE TABLE IF NOT EXISTS
-    bid_depth (
-        depth_update_id BIGINT REFERENCES depth_updates (depth_update_id) ON DELETE CASCADE,
+    orderbook_levels (
+        ob_update_id BIGINT REFERENCES orderbook_updates (ob_update_id) ON DELETE CASCADE,
+        side SMALLINT,
         level_id SMALLINT,
         price NUMERIC(30, 10) NOT NULL,
         quantity NUMERIC(30, 10) NOT NULL
@@ -46,10 +47,10 @@ CREATE TABLE IF NOT EXISTS
 
 
 
-CREATE TABLE IF NOT EXISTS
-    ask_depth (
-        depth_update_id BIGINT REFERENCES depth_updates (depth_update_id) ON DELETE CASCADE,
-        level_id SMALLINT,
-        price NUMERIC(30, 10) NOT NULL,
-        quantity NUMERIC(30, 10) NOT NULL
-    );
+-- CREATE TABLE IF NOT EXISTS
+--     ask_depth (
+--         ob_update_id BIGINT REFERENCES orderbook_updates (ob_update_id) ON DELETE CASCADE,
+--         level_id SMALLINT,
+--         price NUMERIC(30, 10) NOT NULL,
+--         quantity NUMERIC(30, 10) NOT NULL
+--     );
