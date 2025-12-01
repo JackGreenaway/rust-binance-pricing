@@ -10,6 +10,12 @@ dependencies = [
     "matplotlib>=3.10.6",
     "polars>=1.33.0",
     "psycopg2-binary>=2.9.10",
-    "ruff>=0.12.12",
+    "requests>=2.32.5",
     "seaborn>=0.13.2",
+    "websockets>=15.0.1",
+]
+
+[dependency-groups]
+dev = [
+    "ruff>=0.12.12",
 ]
