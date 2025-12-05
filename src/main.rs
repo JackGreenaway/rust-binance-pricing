@@ -1,10 +1,10 @@
-mod db_controllers;
+mod db_controller;
 mod handler;
-mod manip;
+mod data_manip;
 mod types;
 mod utils;
 
-use crate::db_controllers::{Database, del_database};
+use crate::db_controller::{Database, del_database};
 use crate::handler::message_handler;
 use crate::types::Cli;
 use crate::utils::init_tracing;

@@ -39,14 +39,6 @@ pub struct Cli {
     pub verbose: u8,
 }
 
-// fn string_to_i64<'de, D>(deserializer: D) -> Result<i64, D::Error>
-// where
-//     D: serde::Deserializer<'de>,
-// {
-//     let s: String = Deserialize::deserialize(deserializer)?;
-//     s.parse::<i64>().map_err(serde::de::Error::custom)
-// }
-
 #[derive(Deserialize)]
 #[allow(dead_code)]
 pub struct DepthUpdate {
