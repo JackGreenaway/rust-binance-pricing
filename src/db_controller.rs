@@ -150,34 +150,6 @@ impl Database {
         .fetch_one(&mut *tx)
         .await?;
 
-        // if !data.b.is_empty() {
-        //     let mut qb = QueryBuilder::<Postgres>::new(
-        //         "INSERT INTO orderbook_levels (ob_update_id, side, level_id, price, quantity) ",
-        //     );
-        //     qb.push_values(data.b.iter().enumerate(), |mut b, (i, lvl)| {
-        //         b.push_bind(update_id)
-        //             .push_bind(1) // bid side
-        //             .push_bind((i + 1) as i32) // cast usize -> i32
-        //             .push_bind(lvl[0])
-        //             .push_bind(lvl[1]);
-        //     });
-        //     qb.build().execute(&mut *tx).await?;
-        // }
-
-        // if !data.a.is_empty() {
-        //     let mut qb = sqlx::QueryBuilder::<sqlx::Postgres>::new(
-        //         "INSERT INTO orderbook_levels (ob_update_id, side, level_id, price, quantity) ",
-        //     );
-        //     qb.push_values(data.a.iter().enumerate(), |mut b, (i, lvl)| {
-        //         b.push_bind(update_id)
-        //             .push_bind(-1) // ask side
-        //             .push_bind((i + 1) as i32) // cast usize -> i32
-        //             .push_bind(lvl[0])
-        //             .push_bind(lvl[1]);
-        //     });
-        //     qb.build().execute(&mut *tx).await?;
-        // }
-
         self.insert_depth_levels(&mut *tx, update_id, &data.b, 1)
             .await?;
         self.insert_depth_levels(&mut *tx, update_id, &data.a, -1)
@@ -193,71 +165,4 @@ impl Database {
 
         Ok(())
     }
-
-    //     pub async fn insert_book_update(&self, data: &DepthUpdateData) -> Result<(), sqlx::Error> {
-    //         let mut tx: Transaction<'_, Postgres> = self.pool.begin().await?;
-
-    //         let event_time: chrono::DateTime<Utc> = i64_to_ts(data.e2, "utc").with_timezone(&Utc);
-    //         let transaction_time: chrono::DateTime<Utc> = i64_to_ts(data.t, "utc").with_timezone(&Utc);
-
-    //         let update_id: i64 = sqlx::query_scalar(
-    //             "INSERT INTO orderbook_updates (event_time, transaction_time, symbol, first_update_id, last_update_id, previous_update_id)
-    //             VALUES ($1, $2, $3, $4, $5, $6)
-    //             RETURNING ob_update_id"
-    //         )
-    //         .bind(event_time)
-    //         .bind(transaction_time)
-    //         .bind(&data.s)
-    //         .bind(data.u)
-    //         .bind(data.u2)
-    //         .bind(data.p)
-    //         .fetch_one(&mut *tx)
-    //         .await?;
-
-    //         insert_levels(&mut tx, update_id, &data.b, 1).await?;
-    //         insert_levels(&mut tx, update_id, &data.a, -1).await?;
-
-    //         // let bid_values: Vec<String> = data
-    //         //     .b
-    //         //     .iter()
-    //         //     .enumerate()
-    //         //     .map(|(i, bid)| format!("({}, {}, {}, {}, {})", update_id, 1, i + 1, bid[0], bid[1]))
-    //         //     .collect();
-    //         // let bid_sql = format!(
-    //         //     "INSERT INTO orderbook_levels (ob_update_id, side, level_id, price, quantity) VALUES {}",
-    //         //     bid_values.join(", ")
-    //         // );
-    //         // sqlx::query(&bid_sql).execute(&self.pool).await?;
-
-    //         // trace!(
-    //         //     "Completed bid orderbook level insert for ui# {} @ {} for symbol: {}",
-    //         //     update_id,
-    //         //     Utc::now(),
-    //         //     data.s
-    //         // );
-
-    //         // let ask_values: Vec<String> = data
-    //         //     .a
-    //         //     .iter()
-    //         //     .enumerate()
-    //         //     .map(|(i, ask)| format!("({}, {}, {}, {}, {})", update_id, -1, i + 1, ask[0], ask[1]))
-    //         //     .collect();
-    //         // let ask_sql = format!(
-    //         //     "INSERT INTO orderbook_levels (ob_update_id, side, level_id, price, quantity) VALUES {}",
-    //         //     ask_values.join(", ")
-    //         // );
-    //         // sqlx::query(&ask_sql).execute(&self.pool).await?;
-
-    //         tx.commit().await?;
-
-    //         trace!(
-    //             "Completed ask orderbook level insert for event time: {} and ui#: {} @ {} for symbol: {}",
-    //             event_time,
-    //             update_id,
-    //             Utc::now(),
-    //             data.s
-    //         );
-
-    //         Ok(())
-    //     }
 }
